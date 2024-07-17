@@ -40,7 +40,6 @@ import org.jkiss.dbeaver.model.struct.DBSObject;
 import org.jkiss.dbeaver.model.task.DBTTask;
 import org.jkiss.dbeaver.runtime.DBWorkbench;
 import org.jkiss.dbeaver.tasks.ui.wizard.TaskConfigurationWizard;
-import org.jkiss.dbeaver.tasks.ui.wizard.TaskConfigurationWizardDialog;
 import org.jkiss.dbeaver.tasks.ui.wizard.TaskProcessorUI;
 import org.jkiss.dbeaver.tools.transfer.*;
 import org.jkiss.dbeaver.tools.transfer.database.DatabaseTransferProducer;
@@ -666,7 +665,7 @@ public class DataTransferWizard extends TaskConfigurationWizard<DataTransferSett
             false);
 
         DataTransferWizard wizard = new DataTransferWizard(null, settings, true);
-        TaskConfigurationWizardDialog dialog = new TaskConfigurationWizardDialog(workbenchWindow, wizard, selection);
+        DataTransferWizardDialog dialog = new DataTransferWizardDialog(workbenchWindow, wizard, selection);
         dialog.open();
     }
 

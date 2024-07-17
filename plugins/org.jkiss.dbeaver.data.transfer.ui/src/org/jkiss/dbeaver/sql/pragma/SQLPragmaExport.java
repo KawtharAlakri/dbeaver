@@ -25,7 +25,6 @@ import org.jkiss.dbeaver.model.preferences.DBPPropertyDescriptor;
 import org.jkiss.dbeaver.model.runtime.DBRProgressMonitor;
 import org.jkiss.dbeaver.model.sql.SQLPragmaHandler;
 import org.jkiss.dbeaver.model.struct.DBSDataContainer;
-import org.jkiss.dbeaver.tasks.ui.wizard.TaskConfigurationWizardDialog;
 import org.jkiss.dbeaver.tools.transfer.DataTransferSettings;
 import org.jkiss.dbeaver.tools.transfer.DataTransferState;
 import org.jkiss.dbeaver.tools.transfer.database.DatabaseTransferProducer;
@@ -34,6 +33,7 @@ import org.jkiss.dbeaver.tools.transfer.registry.DataTransferProcessorDescriptor
 import org.jkiss.dbeaver.tools.transfer.registry.DataTransferRegistry;
 import org.jkiss.dbeaver.tools.transfer.stream.StreamTransferConsumer;
 import org.jkiss.dbeaver.tools.transfer.ui.wizard.DataTransferWizard;
+import org.jkiss.dbeaver.tools.transfer.ui.wizard.DataTransferWizardDialog;
 import org.jkiss.dbeaver.ui.UIUtils;
 import org.jkiss.utils.CommonUtils;
 
@@ -94,7 +94,7 @@ public class SQLPragmaExport implements SQLPragmaHandler {
                 }
             };
 
-            new TaskConfigurationWizardDialog(UIUtils.getActiveWorkbenchWindow(), wizard, null).open();
+            new DataTransferWizardDialog(UIUtils.getActiveWorkbenchWindow(), wizard, null).open();
         });
 
         return RESULT_CONSUME_PRAGMA | RESULT_CONSUME_QUERY;
