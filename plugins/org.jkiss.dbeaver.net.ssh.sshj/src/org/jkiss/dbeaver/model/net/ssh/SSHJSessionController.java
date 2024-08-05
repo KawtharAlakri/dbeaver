@@ -39,13 +39,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 public class SSHJSessionController extends AbstractSessionController<SSHJSession> {
     private static final Log log = Log.getLog(SSHJSessionController.class);
 
+    private int i=0;
+    SSHClient prevClient = null;
+
     @NotNull
     @Override
-    protected SSHJSession createSession() {
+    public SSHJSession createSession() {
         return new SSHJSession(this);
     }
 
@@ -53,7 +57,8 @@ public class SSHJSessionController extends AbstractSessionController<SSHJSession
     protected SSHClient createNewSession(
         @NotNull DBRProgressMonitor monitor,
         @NotNull DBWHandlerConfiguration configuration,
-        @NotNull SSHHostConfiguration host
+        @NotNull SSHHostConfiguration host,
+        Function<SSHClient,SSHClient> connectClient
     ) throws DBException {
         final int connectTimeout = configuration.getIntProperty(
             SSHConstants.PROP_CONNECT_TIMEOUT,
@@ -61,7 +66,7 @@ public class SSHJSessionController extends AbstractSessionController<SSHJSession
         final int keepAliveInterval = configuration.getIntProperty(SSHConstants.PROP_ALIVE_INTERVAL) / 1000; // sshj uses seconds for keep-alive interval
 
         final SSHAuthConfiguration auth = host.auth();
-        final SSHClient client = new SSHClient();
+        SSHClient client = new SSHClient();
 
         client.setConnectTimeout(connectTimeout);
         client.getConnection().getKeepAlive().setKeepAliveInterval(keepAliveInterval);
@@ -76,7 +81,8 @@ public class SSHJSessionController extends AbstractSessionController<SSHJSession
         monitor.subTask(String.format("Instantiate tunnel to %s:%d", host.hostname(), host.port()));
 
         try {
-            client.connect(host.hostname(), host.port());
+//            client.connect(host.hostname(), host.port());
+            client = connectClient.apply(client);
 
             if (auth instanceof SSHAuthConfiguration.Password password && password.password() != null) {
                 client.authPassword(host.username(), password.password());

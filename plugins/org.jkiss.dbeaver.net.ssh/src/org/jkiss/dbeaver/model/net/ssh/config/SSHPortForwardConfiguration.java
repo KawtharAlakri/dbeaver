@@ -19,6 +19,8 @@ package org.jkiss.dbeaver.model.net.ssh.config;
 import org.jkiss.code.NotNull;
 import org.jkiss.utils.SecurityUtils;
 
+import java.util.Objects;
+
 public record SSHPortForwardConfiguration(
     @NotNull String localHost,
     int localPort,
@@ -33,5 +35,18 @@ public record SSHPortForwardConfiguration(
     @Override
     public String toString() {
         return SecurityUtils.mask(localHost) + ":" + localPort + " <- " + SecurityUtils.mask(remoteHost) + ":" + remotePort;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SSHPortForwardConfiguration that = (SSHPortForwardConfiguration) o;
+        return remotePort == that.remotePort && Objects.equals(localHost, that.localHost) && Objects.equals(remoteHost, that.remoteHost);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(localHost, remoteHost, remotePort);
     }
 }

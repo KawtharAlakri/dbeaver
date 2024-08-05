@@ -17,9 +17,14 @@
 package org.jkiss.dbeaver.model.net.ssh;
 
 import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.common.IOUtils;
+import net.schmizz.sshj.connection.ConnectionException;
+import net.schmizz.sshj.connection.channel.direct.DirectConnection;
 import net.schmizz.sshj.connection.channel.direct.LocalPortForwarder;
 import net.schmizz.sshj.connection.channel.direct.Parameters;
+import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.sftp.SFTPClient;
+import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.xfer.InMemoryDestFile;
 import net.schmizz.sshj.xfer.InMemorySourceFile;
 import org.jkiss.code.NotNull;
@@ -39,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class SSHJSession extends AbstractSession {
     private static final Log log = Log.getLog(SSHJSession.class);
@@ -46,7 +52,7 @@ public class SSHJSession extends AbstractSession {
     private final Map<SSHPortForwardConfiguration, LocalPortListener> listeners = new ConcurrentHashMap<>();
     private final SSHJSessionController controller;
 
-    private SSHClient client;
+    public SSHClient client;
 
     public SSHJSession(@NotNull SSHJSessionController controller) {
         this.controller = controller;
@@ -58,7 +64,50 @@ public class SSHJSession extends AbstractSession {
         @NotNull SSHHostConfiguration destination,
         @NotNull DBWHandlerConfiguration configuration
     ) throws DBException {
-        client = controller.createNewSession(monitor, configuration, destination);
+        client = controller.createNewSession(monitor, configuration, destination, sshClient -> {
+            try {
+                sshClient.connect(destination.hostname(), destination.port());
+                return sshClient;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Override
+    public void connectVia(
+        @NotNull DBRProgressMonitor monitor,
+        @NotNull SSHHostConfiguration destination,
+        @NotNull DBWHandlerConfiguration configuration
+    ) throws DBException {
+        client = controller.createNewSession(monitor, configuration, destination, (sshClient) -> {
+            DirectConnection tunnel = null;
+            try {
+                tunnel = client.newDirectConnection(destination.hostname(), destination.port());
+                sshClient.connectVia(tunnel);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            return sshClient;
+        });
+
+        final Session session;
+        try {
+            session = client.startSession();
+        } catch (ConnectionException e) {
+            throw new RuntimeException(e);
+        } catch (TransportException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            final Session.Command cmd = session.exec("ping -c 1 google.com");
+            System.out.println(IOUtils.readFully(cmd.getInputStream()).toString());
+            cmd.join(5, TimeUnit.SECONDS);
+            System.out.println("\n** exit status: " + cmd.getExitStatus());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
@@ -86,6 +135,15 @@ public class SSHJSession extends AbstractSession {
             final SSHPortForwardConfiguration resolved = Objects.requireNonNull(listener.resolved);
 
             listeners.put(resolved, listener);
+
+//            String localHost = config.localHost();
+//            final ServerSocket ss = new ServerSocket(config.localPort(), 0, InetAddress.getByName(localHost));
+//            final Parameters parameters = new Parameters(localHost, ss.getLocalPort(), config.remoteHost(), config.remotePort());
+//            final LocalPortForwarder forwarder = client.newLocalPortForwarder(parameters, ss);
+//            final LocalPortListener listener = new LocalPortListener(forwarder, parameters);
+//            listener.start();
+//            listeners.add(listener);
+//            return ss.getLocalPort();
 
             return resolved;
         } catch (Exception e) {
@@ -205,6 +263,9 @@ public class SSHJSession extends AbstractSession {
                 final ServerSocket socket = new ServerSocket(config.localPort(), 0, InetAddress.getByName(config.localHost()));
                 final Parameters parameters = new Parameters(config.localHost(), socket.getLocalPort(), config.remoteHost(), config.remotePort());
 
+                if (client == null) {
+                    return;
+                }
                 forwarder = client.newLocalPortForwarder(parameters, socket);
                 resolved = new SSHPortForwardConfiguration(config.localHost(), socket.getLocalPort(), config.remoteHost(), config.remotePort());
 

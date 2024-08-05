@@ -14,41 +14,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jkiss.dbeaver.model.net.ssh;
+package org.jkiss.dbeaver.model.net.ssh.session;
 
 import org.jkiss.code.NotNull;
+import org.jkiss.code.Nullable;
 import org.jkiss.dbeaver.DBException;
 import org.jkiss.dbeaver.model.net.DBWHandlerConfiguration;
+import org.jkiss.dbeaver.model.net.ssh.AbstractSession;
 import org.jkiss.dbeaver.model.net.ssh.config.SSHHostConfiguration;
 import org.jkiss.dbeaver.model.net.ssh.config.SSHPortForwardConfiguration;
 import org.jkiss.dbeaver.model.runtime.DBRProgressMonitor;
 
-public abstract class AbstractSession implements SSHSession {
-    public abstract void connect(
-        @NotNull DBRProgressMonitor monitor,
-        @NotNull SSHHostConfiguration destination,
-        @NotNull DBWHandlerConfiguration configuration
-    ) throws DBException;
+public class DirectSession<T extends AbstractSession> extends WrapperSession<T> {
+    private SSHPortForwardConfiguration portForward;
 
-    public void connectVia(
+    public DirectSession(
+        @NotNull ShareableSession<T> inner,
+        @Nullable SSHPortForwardConfiguration portForward
+    ) {
+        super(inner);
+        this.portForward = portForward;
+    }
+
+    @Override
+    public synchronized void connect(
         @NotNull DBRProgressMonitor monitor,
         @NotNull SSHHostConfiguration destination,
         @NotNull DBWHandlerConfiguration configuration
     ) throws DBException {
+        super.connect(monitor, destination, configuration);
+
+        if (portForward != null) {
+            portForward = super.setupPortForward(portForward);
+        }
     }
 
-    public abstract void disconnect(
+    @Override
+    public synchronized void disconnect(
         @NotNull DBRProgressMonitor monitor,
         @NotNull DBWHandlerConfiguration configuration,
         long timeout
-    ) throws DBException;
+    ) throws DBException {
+        if (portForward != null) {
+            super.removePortForward(portForward);
+        }
 
-    @NotNull
-    public abstract SSHPortForwardConfiguration setupPortForward(
-        @NotNull SSHPortForwardConfiguration configuration
-    ) throws DBException;
-
-    public abstract void removePortForward(
-        @NotNull SSHPortForwardConfiguration configuration
-    ) throws DBException;
+        super.disconnect(monitor, configuration, timeout);
+    }
 }
+

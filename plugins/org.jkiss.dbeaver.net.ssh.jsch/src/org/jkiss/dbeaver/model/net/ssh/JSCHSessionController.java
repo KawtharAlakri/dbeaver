@@ -53,7 +53,7 @@ public class JSCHSessionController extends AbstractSessionController<JSCHSession
 
     @NotNull
     @Override
-    protected JSCHSession createSession() {
+    public JSCHSession createSession() {
         return new JSCHSession(this);
     }
 
