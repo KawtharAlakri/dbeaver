@@ -136,20 +136,57 @@ public class SSHJSession extends AbstractSession {
 
             listeners.put(resolved, listener);
 
+//            int localPort = config.localPort();
 //            String localHost = config.localHost();
-//            final ServerSocket ss = new ServerSocket(config.localPort(), 0, InetAddress.getByName(localHost));
-//            final Parameters parameters = new Parameters(localHost, ss.getLocalPort(), config.remoteHost(), config.remotePort());
+//            String remoteHost = config.remoteHost();
+//            int remotePort = config.remotePort();
+//            final ServerSocket ss = new ServerSocket(localPort, 0, InetAddress.getByName(localHost));
+//            final Parameters parameters = new Parameters(localHost, ss.getLocalPort(), remoteHost, remotePort);
 //            final LocalPortForwarder forwarder = client.newLocalPortForwarder(parameters, ss);
-//            final LocalPortListener listener = new LocalPortListener(forwarder, parameters);
-//            listener.start();
-//            listeners.add(listener);
-//            return ss.getLocalPort();
+//        final LocalPortListener listener = new LocalPortListener(forwarder, parameters);
+//
+//        listener.start();
+        listeners.put(listener.resolved, listener);
+//            Thread forwarderThread = new Thread(() -> {
+//                try {
+//                    forwarder.listen();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            });
+//            forwarderThread.start();
+
 
             return resolved;
         } catch (Exception e) {
             throw new DBException("Error setting up port forwarding", e);
         }
     }
+
+    public int setPortForwarding(
+        @NotNull SSHClient client,
+        @NotNull String localHost, int localPort,
+        @NotNull String remoteHost, int remotePort
+    ) throws IOException {
+        final ServerSocket ss = new ServerSocket(localPort, 0, InetAddress.getByName(localHost));
+        final Parameters parameters = new Parameters(localHost, ss.getLocalPort(), remoteHost, remotePort);
+        final LocalPortForwarder forwarder = client.newLocalPortForwarder(parameters, ss);
+//        final LocalPortListener listener = new LocalPortListener(forwarder, parameters);
+//
+//        listener.start();
+//        listeners.put(listener.resolved, listener);
+        Thread forwarderThread = new Thread(() -> {
+            try {
+                forwarder.listen();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        forwarderThread.start();
+
+        return ss.getLocalPort();
+    }
+
 
     @Override
     public void removePortForward(@NotNull SSHPortForwardConfiguration configuration) throws DBException {

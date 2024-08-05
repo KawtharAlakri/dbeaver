@@ -27,6 +27,7 @@ import org.jkiss.dbeaver.model.connection.DBPConnectionConfiguration;
 import org.jkiss.dbeaver.model.exec.DBCInvalidatePhase;
 import org.jkiss.dbeaver.model.net.DBWHandlerConfiguration;
 import org.jkiss.dbeaver.model.net.DBWTunnel;
+import org.jkiss.dbeaver.model.net.DBWUtils;
 import org.jkiss.dbeaver.model.net.ssh.config.SSHAuthConfiguration;
 import org.jkiss.dbeaver.model.net.ssh.config.SSHHostConfiguration;
 import org.jkiss.dbeaver.model.net.ssh.config.SSHPortForwardConfiguration;
@@ -204,8 +205,8 @@ public class SSHTunnelImpl implements DBWTunnel {
         session = sessions[sessions.length - 1];
 
         connectionInfo = new DBPConnectionConfiguration(connectionInfo);
-//        SSHHostConfiguration destination = ((JumpSession) session).getInner().getDestination();
-//        DBWUtils.updateConfigWithTunnelInfo(configuration, connectionInfo, destination.hostname(), destination.port());
+ //       SSHHostConfiguration destination = ((JumpSession) session).getInner().getDestination();
+        DBWUtils.updateConfigWithTunnelInfo(configuration, connectionInfo, "localhost", configuration.getIntProperty("myPort"));
         return connectionInfo;
     }
 

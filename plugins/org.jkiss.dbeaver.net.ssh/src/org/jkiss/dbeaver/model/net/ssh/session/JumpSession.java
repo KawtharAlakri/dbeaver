@@ -23,6 +23,7 @@ import org.jkiss.dbeaver.model.DBPDataSourceContainer;
 import org.jkiss.dbeaver.model.net.DBWHandlerConfiguration;
 import org.jkiss.dbeaver.model.net.ssh.AbstractSession;
 import org.jkiss.dbeaver.model.net.ssh.AbstractSessionController;
+import org.jkiss.dbeaver.model.net.ssh.SSHConstants;
 import org.jkiss.dbeaver.model.net.ssh.config.SSHHostConfiguration;
 import org.jkiss.dbeaver.model.net.ssh.config.SSHPortForwardConfiguration;
 import org.jkiss.dbeaver.model.runtime.DBRProgressMonitor;
@@ -79,7 +80,15 @@ public class JumpSession<T extends AbstractSession> extends DelegateSession {
 //        jumpDestination = controller.getOrCreateDirectSession(configuration, jumpHost, null);
 //        jumpDestination.connect(monitor, jumpHost, configuration);
 
-            ((WrapperSession) origin).inner.getSession().connectVia(monitor, host, configuration);
+        AbstractSession session = ((WrapperSession) origin).inner.getSession();
+        session.connectVia(monitor, host, configuration);
+        SSHPortForwardConfiguration resolved = session.setupPortForward(new SSHPortForwardConfiguration(
+            SSHConstants.LOCAL_HOST,
+            0,
+            host.hostname(),
+            host.port()
+        ));
+        configuration.setProperty("myPort", resolved.localPort());
 
 //        if (portForward != null) {
 //            portForward = jumpDestination.setupPortForward(portForward);
