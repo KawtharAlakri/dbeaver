@@ -38,7 +38,7 @@ import java.util.Map;
  * PostgreTableColumn
  */
 public class PostgreTableColumn extends PostgreAttribute<PostgreTableBase>
-    implements PostgrePrivilegeOwner, PostgreScriptObject, GisAttribute, JDBCColumnKeyType {
+        implements PostgrePrivilegeOwner, PostgreScriptObject, GisAttribute, JDBCColumnKeyType {
     private static final Log log = Log.getLog(PostgreTableColumn.class);
 
     public PostgreTableColumn(DBRProgressMonitor monitor, PostgreTableBase table, PostgreTableColumn source) throws DBException {
@@ -108,10 +108,12 @@ public class PostgreTableColumn extends PostgreAttribute<PostgreTableBase>
 
     @Override
     public boolean isInUniqueKey() {
-        final List<PostgreTableConstraintBase<?>> cCache = getTable().getSchema().getConstraintCache().getCachedObjects(getTable());
+        final List<PostgreTableConstraintBase<?>> cCache = getTable().getSchema().getConstraintCache()
+                .getCachedObjects(getTable());
         if (!CommonUtils.isEmpty(cCache)) {
             for (PostgreTableConstraintBase<?> key : cCache) {
-                if (key instanceof PostgreTableConstraint && key.getConstraintType() == DBSEntityConstraintType.PRIMARY_KEY) {
+                if (key instanceof PostgreTableConstraint
+                        && key.getConstraintType() == DBSEntityConstraintType.PRIMARY_KEY) {
                     List<PostgreTableConstraintColumn> cColumns = ((PostgreTableConstraint) key).getColumns();
                     if (!CommonUtils.isEmpty(cColumns)) {
                         for (PostgreTableConstraintColumn cCol : cColumns) {
