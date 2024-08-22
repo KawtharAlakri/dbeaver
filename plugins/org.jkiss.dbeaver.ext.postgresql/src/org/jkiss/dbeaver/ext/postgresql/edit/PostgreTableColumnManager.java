@@ -132,6 +132,13 @@ public class PostgreTableColumnManager extends SQLTableColumnManager<PostgreTabl
         }
     };
 
+    protected final ColumnModifier<PostgreTableColumn> PostgreStorageStrategyModifier = (monitor, column, sql, command) -> {
+        String storageStrategy = column.getStorageStrategy();
+        if (!CommonUtils.isEmpty(storageStrategy) && !storageStrategy.equals("DEFAULT")) {
+            sql.append(" SET STORAGE ").append(storageStrategy);
+        }
+    };
+    
     @Override
     public boolean canEditObject(PostgreTableColumn object) {
         return true;
@@ -151,7 +158,8 @@ public class PostgreTableColumnManager extends SQLTableColumnManager<PostgreTabl
             PostgreDefaultModifier,
             PostgreIdentityModifier,
             PostgreCollateModifier,
-            PostgreGeneratedModifier
+            PostgreGeneratedModifier,
+            PostgreStorageStrategyModifier
         };
         if (column.getDataSource().getServerType().supportsColumnsRequiring()) {
             modifiers = ArrayUtils.add(ColumnModifier.class, modifiers, NullNotNullModifier);
